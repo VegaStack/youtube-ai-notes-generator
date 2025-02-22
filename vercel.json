@@ -1,9 +1,0 @@
-{
-    "buildCommand": "next build",
-    "framework": "nextjs",
-    "outputDirectory": ".vercel/output/static",
-    "regions": ["iad1"],
-    "env": {
-      "NEXT_TELEMETRY_DISABLED": "1"
-    }
-  }
