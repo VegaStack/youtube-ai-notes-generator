@@ -83,7 +83,6 @@ export default function NotesViewer({ notes, videoId }: NotesViewerProps) {
         logging: false,
         useCORS: true,
         backgroundColor: '#ffffff',
-        letterRendering: true,
         allowTaint: false,
         imageTimeout: 0,
         width: container.offsetWidth,
