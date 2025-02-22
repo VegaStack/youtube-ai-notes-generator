@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'YouTube AI Notes Generator by VegaStack',
     description: 'Extracts transcripts from YouTube videos and generates AI-powered structured notes for better learning.',
-    url: 'https://youtube-notes.vegastack.com.com', // Replace with your actual domain
+    url: 'https://youtube-notes.vegastack.com', // Replace with your actual domain
     siteName: 'YouTube AI Notes Generator',
     images: [
       {
