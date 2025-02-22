@@ -9,9 +9,6 @@ import NotesViewer from '@/components/NotesViewer';
 import { fetchTranscript, getVideoDetails } from '@/lib/youtube';
 import { generateNotes } from '@/lib/openai';
 
-// Enable Edge Runtime for Cloudflare Pages
-export const runtime = 'edge';
-
 // Helper for formatting dates like YouTube
 const formatDate = (dateString: string | undefined): string => {
   if (!dateString) return '';
@@ -54,12 +51,16 @@ export default function NotesPage() {
         const videoDetails = await getVideoDetails(videoId);
         console.log('Video details fetched:', videoDetails);
         
-        if (videoDetails.title) {
+        if (videoDetails.title && typeof window !== 'undefined') {
           document.title = `${videoDetails.title} - Notes`;
         }
         
-        const savedNotes = localStorage.getItem(`notes_${videoId}`);
-        const savedTranscript = localStorage.getItem(`transcript_${videoId}`);
+        // Check for saved data in localStorage with browser check
+        let savedNotes, savedTranscript;
+        if (typeof window !== 'undefined') {
+          savedNotes = localStorage.getItem(`notes_${videoId}`);
+          savedTranscript = localStorage.getItem(`transcript_${videoId}`);
+        }
         
         if (savedNotes && savedTranscript) {
           const transcriptData = JSON.parse(savedTranscript);
@@ -89,11 +90,14 @@ export default function NotesPage() {
         const notes = await generateNotes(transcriptData.transcript_text);
         console.log('Notes generated successfully');
         
-        localStorage.setItem(`notes_${videoId}`, notes);
-        localStorage.setItem(`transcript_${videoId}`, JSON.stringify({
-          transcript: transcriptData.transcript,
-          transcript_text: transcriptData.transcript_text
-        }));
+        // Save to localStorage with browser check
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(`notes_${videoId}`, notes);
+          localStorage.setItem(`transcript_${videoId}`, JSON.stringify({
+            transcript: transcriptData.transcript,
+            transcript_text: transcriptData.transcript_text
+          }));
+        }
         
         setData({
           videoId,
