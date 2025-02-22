@@ -11,7 +11,11 @@ const nextConfig = {
     SUMMARY_PROMPT: process.env.SUMMARY_PROMPT,
   },
   experimental: {
-    runtime: 'edge',
+    runtime: "edge",
+  },
+  productionBrowserSourceMaps: false, // 🔹 Disable source maps in production
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production", // 🔹 Remove console logs in production
   },
 };
 
