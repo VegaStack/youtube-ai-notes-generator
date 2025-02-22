@@ -50,7 +50,7 @@ export default function NotesViewer({ notes, videoId }: NotesViewerProps) {
     await copyShareLink(shareUrl);
   };
 
-  // Download notes as PDF (multi-page approach)
+  // Download notes as PDF (multi-page, with header + dynamic footer)
   const handleDownloadPdf = async () => {
     if (!notesRef.current) return;
 
@@ -59,7 +59,7 @@ export default function NotesViewer({ notes, videoId }: NotesViewerProps) {
 
       // Create an off-screen container for consistent styling
       const container = document.createElement('div');
-      container.style.width = '794px'; // A4 width in pixels at ~96 DPI
+      container.style.width = '794px'; // A4 width in px at ~96 DPI
       container.style.padding = '20px 40px';
       container.style.backgroundColor = 'white';
       container.style.position = 'absolute';
@@ -72,6 +72,15 @@ export default function NotesViewer({ notes, videoId }: NotesViewerProps) {
       container.style.transformOrigin = 'top left';
       container.style.transform = 'scale(1)';
 
+      // --- Optional bullet styling tweaks ---
+      container.querySelectorAll('ul').forEach((ul) => {
+        (ul as HTMLElement).style.paddingLeft = '1.5rem';
+        (ul as HTMLElement).style.marginBottom = '1rem';
+      });
+      container.querySelectorAll('li').forEach((li) => {
+        (li as HTMLElement).style.marginBottom = '0.5rem';
+      });
+
       // Clone the notes content into our container
       const clonedContent = notesRef.current.cloneNode(true) as HTMLElement;
       container.appendChild(clonedContent);
@@ -83,6 +92,7 @@ export default function NotesViewer({ notes, videoId }: NotesViewerProps) {
         logging: false,
         useCORS: true,
         backgroundColor: '#ffffff',
+        letterRendering: true,
         allowTaint: false,
         imageTimeout: 0,
         width: container.offsetWidth,
@@ -105,7 +115,7 @@ export default function NotesViewer({ notes, videoId }: NotesViewerProps) {
       const pageWidthMM = 210;
       const pageHeightMM = 297;
 
-      // We’ll apply margins to the PDF
+      // We'll apply margins
       const margins = {
         top: 10,
         right: 10,
@@ -113,21 +123,33 @@ export default function NotesViewer({ notes, videoId }: NotesViewerProps) {
         left: 10
       };
       const contentWidthMM = pageWidthMM - margins.left - margins.right;
-      const contentHeightMM = pageHeightMM - margins.top - margins.bottom;
 
-      // Canvas dimensions in pixels
+      // Reserve space for a header and a footer
+      const headerHeightMM = 10; // Enough space for a header line
+      const footerHeightMM = 10; // Enough space for a footer line
+      const contentHeightMM =
+        pageHeightMM - margins.top - margins.bottom - headerHeightMM - footerHeightMM;
+
+      // Canvas dimensions in px
       const bigCanvasWidthPx = bigCanvas.width;
       const bigCanvasHeightPx = bigCanvas.height;
 
-      // Convert the canvas width from px → mm to keep proportions
-      // (We scale the entire width to fit the PDF content width.)
+      // Scale from px to mm so the width fits into contentWidthMM
       const pxToMm = contentWidthMM / bigCanvasWidthPx;
 
-      // The height in px that fits on one PDF page (minus margins)
+      // The portion of the big canvas that fits on one PDF page in px
       const pageContentHeightPx = contentHeightMM / pxToMm;
 
       // Calculate total pages needed
       const totalPages = Math.ceil(bigCanvasHeightPx / pageContentHeightPx);
+
+      // Header text
+      const headerText = 'YouTube AI Notes Generator by VegaStack';
+
+      // Dynamic footer text: "Generated on <date time> at <site url>"
+      const dateTime = new Date().toLocaleString();
+      const siteUrl = window.location.origin;
+      const footerText = `Generated on ${dateTime} at ${siteUrl}`;
 
       for (let pageIndex = 0; pageIndex < totalPages; pageIndex++) {
         // Add a new page for every page after the first
@@ -135,20 +157,27 @@ export default function NotesViewer({ notes, videoId }: NotesViewerProps) {
           pdf.addPage();
         }
 
-        // Create a chunk canvas for just this page portion
-        const chunkCanvas = document.createElement('canvas');
-        chunkCanvas.width = bigCanvasWidthPx;
-        // Only take as much height as remains, or one page chunk
+        // Draw the header on each page
+        pdf.setFontSize(12);
+        pdf.setTextColor(0); // black
+        // Place header ~5 mm below the top margin
+        pdf.text(headerText, pageWidthMM / 2, margins.top + 5, { align: 'center' });
+
+        // Calculate how tall this chunk is
         const chunkHeightPx = Math.min(
           pageContentHeightPx,
           bigCanvasHeightPx - pageIndex * pageContentHeightPx
         );
+
+        // Create a chunk canvas
+        const chunkCanvas = document.createElement('canvas');
+        chunkCanvas.width = bigCanvasWidthPx;
         chunkCanvas.height = Math.max(0, chunkHeightPx);
 
         const chunkCtx = chunkCanvas.getContext('2d');
         if (!chunkCtx) continue;
 
-        // Draw the portion of the big canvas onto the chunk canvas
+        // Draw the portion of the big canvas onto the chunk
         const yOffsetPx = pageIndex * pageContentHeightPx;
         chunkCtx.drawImage(bigCanvas, 0, -yOffsetPx);
 
@@ -158,17 +187,25 @@ export default function NotesViewer({ notes, videoId }: NotesViewerProps) {
         // The chunk’s height in mm after scaling
         const chunkHeightMM = chunkCanvas.height * pxToMm;
 
-        // Add the chunk to the PDF
+        // Where we place the image below the header
+        const imageY = margins.top + headerHeightMM;
+        // Add the chunk image
         pdf.addImage(
           chunkImgData,
           'JPEG',
           margins.left,
-          margins.top,
+          imageY,
           contentWidthMM,
           chunkHeightMM
         );
 
-        // Optional: Add page numbering
+        // Draw the footer on each page
+        pdf.setFontSize(10);
+        pdf.setTextColor(0); // black
+        // Place footer ~5 mm above the page bottom
+        pdf.text(footerText, pageWidthMM / 2, pageHeightMM - margins.bottom - 5, { align: 'center' });
+        
+        // Add page numbering (centered near bottom)
         pdf.setFontSize(10);
         pdf.setTextColor(100);
         pdf.text(
