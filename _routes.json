@@ -1,0 +1,12 @@
+{
+    "version": 1,
+    "include": ["/*"],
+    "exclude": [],
+    "config": {
+      "runtime": {
+        "type": "edge",
+        "compatibility_date": "2024-02-22",
+        "compatibility_flags": ["nodejs_compat"]
+      }
+    }
+  }
