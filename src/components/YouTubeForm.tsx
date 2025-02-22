@@ -23,7 +23,7 @@ export default function YouTubeForm() {
       }
 
       // Redirect to the processing page
-      router.push(`/notes/${videoId}?url=${encodeURIComponent(url)}`);
+      router.push(`/notes/${videoId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
       setIsLoading(false);
