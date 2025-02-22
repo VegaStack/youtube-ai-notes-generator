@@ -1,10 +1,7 @@
-import { setupDevPlatform } from '@cloudflare/next-on-pages/next-dev';
-
-/** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['img.youtube.com', 'i.ytimg.com'],
+    domains: ["img.youtube.com", "i.ytimg.com"],
     unoptimized: true,
   },
   env: {
@@ -17,10 +14,5 @@ const nextConfig = {
     runtime: 'edge',
   },
 };
-
-// Cloudflare-specific dev setup
-if (process.env.NODE_ENV === 'development') {
-  await setupDevPlatform();
-}
 
 export default nextConfig;
