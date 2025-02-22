@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .prose h1 {
+    @apply text-2xl font-bold my-4;
+  }
+  
+  .prose h2 {
+    @apply text-xl font-semibold my-3;
+  }
+  
+  .prose h3 {
+    @apply text-lg font-semibold my-2;
+  }
+  
+  .prose ul {
+    @apply list-disc pl-5 my-2;
+  }
+  
+  .prose ol {
+    @apply list-decimal pl-5 my-2;
+  }
+  
+  .prose p {
+    @apply my-2;
+  }
+  
+  .prose a {
+    @apply text-primary-1300 hover:underline;
+  }
+  
+  .prose blockquote {
+    @apply pl-4 border-l-4 border-gray-300 italic;
+  }
+}
