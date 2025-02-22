@@ -2,6 +2,9 @@
 
 YouTube AI Notes Generator automatically extracts transcripts from YouTube videos, processes them with OpenAI, and generates comprehensive, structured notes. This tool makes learning from YouTube videos more efficient by providing shareable, downloadable notes alongside the original video content.
 
+[![Try Demo](https://img.shields.io/badge/Try%20Demo-black?style=for-the-badge&logo=web&logoColor=white)](https://youtube-notes.vegastack.com)
+
+
 ![YouTube AI Notes Generator Preview](public/images/youtube-ai-notes-generator.png)
 
 ## Features
@@ -181,30 +184,6 @@ npm run build
 
    Trigger a deployment from the Cloudflare dashboard.
 
-### Alternative Deployment Using Wrangler
-
-Alternatively, you can deploy directly using Wrangler:
-
-1. **Install the Cloudflare Pages Plugin**
-```bash
-npm install -D @cloudflare/next-on-pages
-```
-
-2. **Add build scripts to package.json**
-```json
-"scripts": {
-  "pages:build": "npx @cloudflare/next-on-pages",
-  "pages:deploy": "npm run pages:build && wrangler pages deploy .vercel/output/static",
-  "pages:watch": "npx @cloudflare/next-on-pages --watch",
-  "pages:dev": "npx wrangler pages dev .vercel/output/static"
-}
-```
-
-3. **Build and deploy**
-```bash
-npm run pages:deploy
-```
-
 ## Usage
 
 1. Visit your deployed application
@@ -228,7 +207,7 @@ SUMMARY_PROMPT="Create structured notes from this transcript with the following 
 Change the `OPENAI_MODEL` environment variable to use a different model:
 
 ```
-OPENAI_MODEL=gpt-3.5-turbo
+OPENAI_MODEL=gpt-4o-mini
 ```
 
 ### Styling Changes

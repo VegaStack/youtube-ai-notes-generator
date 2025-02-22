@@ -143,7 +143,7 @@ export default function NotesPageClient() {
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto text-center py-20">
-        <div className="mb-4 text-2xl font-semibold">Processing Video</div>
+        <div className="mb-4 text-2xl font-semibold">Fetching & Processing Video</div>
         <p className="text-primary-1300">
           We're extracting the transcript and generating notes. This may take a minute or two, especially for longer videos.
         </p>
