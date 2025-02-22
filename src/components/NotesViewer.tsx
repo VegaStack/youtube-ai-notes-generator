@@ -92,7 +92,6 @@ export default function NotesViewer({ notes, videoId }: NotesViewerProps) {
         logging: false,
         useCORS: true,
         backgroundColor: '#ffffff',
-        letterRendering: true,
         allowTaint: false,
         imageTimeout: 0,
         width: container.offsetWidth,
@@ -204,7 +203,7 @@ export default function NotesViewer({ notes, videoId }: NotesViewerProps) {
         pdf.setTextColor(0); // black
         // Place footer ~5 mm above the page bottom
         pdf.text(footerText, pageWidthMM / 2, pageHeightMM - margins.bottom - 5, { align: 'center' });
-        
+
         // Add page numbering (centered near bottom)
         pdf.setFontSize(10);
         pdf.setTextColor(100);
