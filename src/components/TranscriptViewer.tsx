@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { TranscriptItem } from '@/lib/types';
+import { ClipboardDocumentIcon } from '@heroicons/react/24/outline';
 
 interface TranscriptViewerProps {
   transcript: TranscriptItem[] | null | undefined;
@@ -106,30 +107,17 @@ export default function TranscriptViewer({ transcript, transcriptText, onTimesta
         <h2 className="text-xl font-semibold">Transcript</h2>
         <button 
           onClick={handleCopyTranscript}
-          className="text-sm px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md flex items-center"
+          className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
         >
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            className="h-4 w-4 mr-1" 
-            fill="none" 
-            viewBox="0 0 24 24" 
-            stroke="currentColor"
-          >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" 
-            />
-          </svg>
-          Copy Transcript
+          <ClipboardDocumentIcon className="h-4 w-4" />
+          <span className="text-sm">Copy</span>
         </button>
       </div>
       
       {/* Copy success message */}
       {copySuccess && (
-        <div className="absolute top-2 right-2 bg-green-100 text-green-800 px-4 py-2 rounded-md shadow-md">
-          Copied to clipboard!
+        <div className="fixed top-4 right-4 bg-green-100 text-green-800 px-4 py-2 rounded-md shadow-md z-50">
+          Copied Transcript to clipboard!
         </div>
       )}
       

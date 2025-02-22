@@ -143,8 +143,8 @@ export default function NotesPageClient() {
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto text-center py-20">
-        <div className="mb-4 text-2xl font-semibold">Fetching & Processing Video</div>
-        <p className="text-primary-1300">
+        <div className="mb-4 text-2xl font-semibold px-2 sm:px-0">Fetching & Processing Video</div>
+        <p className="text-primary-1300 px-2 sm:px-0">
           We're extracting the transcript and generating notes. This may take a minute or two, especially for longer videos.
         </p>
         <div className="mt-8 flex justify-center">
@@ -156,10 +156,10 @@ export default function NotesPageClient() {
 
   if (data) {
     return (
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-2xl font-bold mb-2">{data.videoDetails.title}</h1>
+      <div className="max-w-6xl mx-auto px-4 sm:px-0">
+        <h1 className="text-2xl font-bold mb-2">Title: {data.videoDetails.title}</h1>
         <div className="text-primary-1300 text-sm mb-4">
-          {data.videoDetails.channelTitle && <span className="font-medium">{data.videoDetails.channelTitle}</span>}
+          {data.videoDetails.channelTitle && <span className="font-medium">Channel: {data.videoDetails.channelTitle}</span>}
           {data.videoDetails.channelTitle && data.videoDetails.publishedAt && <span className="mx-1">•</span>}
           {data.videoDetails.publishedAt && <span>{formatDate(data.videoDetails.publishedAt)}</span>}
         </div>

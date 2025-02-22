@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
+import { ClipboardDocumentIcon, LinkIcon, ArrowDownTrayIcon, ShareIcon } from '@heroicons/react/24/outline';
+import Link from 'next/link';
 
 interface NotesViewerProps {
   notes: string;
@@ -14,6 +16,7 @@ export default function NotesViewer({ notes, videoId }: NotesViewerProps) {
   const [copySuccess, setCopySuccess] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [shareSuccess, setShareSuccess] = useState(false);
+
   const notesRef = React.useRef<HTMLDivElement>(null);
 
   // Copy notes to clipboard in markdown format
@@ -28,10 +31,15 @@ export default function NotesViewer({ notes, videoId }: NotesViewerProps) {
     }
   };
 
-  // Helper to copy share link to clipboard
-  const copyShareLink = async (url: string) => {
+  // Copy share link to clipboard
+  const handleShareLink = async () => {
+    if (!videoId) {
+      alert('Cannot share without video ID');
+      return;
+    }
+    const shareUrl = `${window.location.origin}/notes/${videoId}`;
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(shareUrl);
       setShareSuccess(true);
       setTimeout(() => setShareSuccess(false), 3000);
     } catch (err) {
@@ -40,14 +48,27 @@ export default function NotesViewer({ notes, videoId }: NotesViewerProps) {
     }
   };
 
-  // Share notes via URL - directly copy to clipboard
-  const handleShareLink = async () => {
+  // System share option
+  const handleSystemShare = async () => {
     if (!videoId) {
       alert('Cannot share without video ID');
       return;
     }
     const shareUrl = `${window.location.origin}/notes/${videoId}`;
-    await copyShareLink(shareUrl);
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Check these notes',
+          url: shareUrl
+        });
+      } catch (err) {
+        console.error('System share canceled or failed', err);
+      }
+    } else {
+      await navigator.clipboard.writeText(shareUrl);
+      setShareSuccess(true);
+      setTimeout(() => setShareSuccess(false), 3000);
+    }
   };
 
   // Download notes as PDF (multi-page, with header + dynamic footer)
@@ -71,15 +92,6 @@ export default function NotesViewer({ notes, videoId }: NotesViewerProps) {
       container.style.color = '#000';
       container.style.transformOrigin = 'top left';
       container.style.transform = 'scale(1)';
-
-      // --- Optional bullet styling tweaks ---
-      container.querySelectorAll('ul').forEach((ul) => {
-        (ul as HTMLElement).style.paddingLeft = '1.5rem';
-        (ul as HTMLElement).style.marginBottom = '1rem';
-      });
-      container.querySelectorAll('li').forEach((li) => {
-        (li as HTMLElement).style.marginBottom = '0.5rem';
-      });
 
       // Clone the notes content into our container
       const clonedContent = notesRef.current.cloneNode(true) as HTMLElement;
@@ -202,7 +214,9 @@ export default function NotesViewer({ notes, videoId }: NotesViewerProps) {
         pdf.setFontSize(10);
         pdf.setTextColor(0); // black
         // Place footer ~5 mm above the page bottom
-        pdf.text(footerText, pageWidthMM / 2, pageHeightMM - margins.bottom - 5, { align: 'center' });
+        pdf.text(footerText, pageWidthMM / 2, pageHeightMM - margins.bottom - 5, {
+          align: 'center'
+        });
 
         // Add page numbering (centered near bottom)
         pdf.setFontSize(10);
@@ -219,7 +233,6 @@ export default function NotesViewer({ notes, videoId }: NotesViewerProps) {
       const videoTitle = document.title.replace(' - Notes', '') || 'YouTube Notes';
       const timestamp = new Date().toISOString().split('T')[0];
       pdf.save(`${videoTitle}_${timestamp}.pdf`);
-
     } catch (err) {
       console.error('Error generating PDF:', err);
       alert('Failed to generate PDF');
@@ -233,91 +246,73 @@ export default function NotesViewer({ notes, videoId }: NotesViewerProps) {
   }
 
   return (
-    <div className="px-4 py-2 bg-white rounded-md border border-gray-200">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Notes</h2>
-        <div className="flex gap-2">
-          <button
-            onClick={handleCopyNotes}
-            className="text-sm px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md flex items-center"
-            title="Copy notes in markdown format"
-          >
-            <svg
-              className="h-4 w-4 mr-1"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+    <div className="space-y-6">
+      <div className="px-4 py-2 bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Notes</h2>
+          <div className="flex gap-2">
+            <button
+              onClick={handleCopyNotes}
+              className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+              title="Copy notes in markdown format"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
-              />
-            </svg>
-            Copy
-          </button>
+              <ClipboardDocumentIcon className="h-4 w-4" />
+            </button>
 
-          <button
-            onClick={handleDownloadPdf}
-            disabled={downloadingPdf}
-            className="text-sm px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Download as PDF"
-          >
-            <svg
-              className="h-4 w-4 mr-1"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+            <button
+              onClick={handleShareLink}
+              className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+              title="Copy share link"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-              />
-            </svg>
-            {downloadingPdf ? 'Preparing...' : 'Download PDF'}
-          </button>
+              <LinkIcon className="h-4 w-4" />
+            </button>
 
-          <button
-            onClick={handleShareLink}
-            className="text-sm px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md flex items-center"
-            title="Share notes link"
-          >
-            <svg
-              className="h-4 w-4 mr-1"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+            <button
+              onClick={handleDownloadPdf}
+              disabled={downloadingPdf}
+              className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors disabled:opacity-50"
+              title="Download as PDF"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-              />
-            </svg>
-            Share
-          </button>
+              {downloadingPdf ? (
+                <div className="h-4 w-4 border-2 border-gray-400 border-t-gray-800 rounded-full animate-spin" />
+              ) : (
+                <ArrowDownTrayIcon className="h-4 w-4" />
+              )}
+            </button>
+
+            <button
+              onClick={handleSystemShare}
+              className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+              title="Share"
+            >
+              <ShareIcon className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        {copySuccess && (
+          <div className="fixed top-4 right-4 bg-green-100 text-green-800 px-4 py-2 rounded-md shadow-md z-50">
+            Copied to clipboard!
+          </div>
+        )}
+        {shareSuccess && (
+          <div className="fixed top-4 right-4 bg-green-100 text-green-800 px-4 py-2 rounded-md shadow-md z-50">
+            Share link copied!
+          </div>
+        )}
+
+        <div ref={notesRef} className="prose max-w-none">
+          <ReactMarkdown>{notes}</ReactMarkdown>
         </div>
       </div>
 
-      {/* Success messages */}
-      {copySuccess && (
-        <div className="absolute top-2 right-2 bg-green-100 text-green-800 px-4 py-2 rounded-md shadow-md">
-          Notes copied to clipboard!
-        </div>
-      )}
-      {shareSuccess && (
-        <div className="absolute top-2 right-2 bg-green-100 text-green-800 px-4 py-2 rounded-md shadow-md">
-          Share link copied to clipboard!
-        </div>
-      )}
-
-      {/* Notes content */}
-      <div ref={notesRef} className="prose max-w-none">
-        <ReactMarkdown>{notes}</ReactMarkdown>
+      <div className="flex justify-center py-8">
+        <Link
+          href="/"
+          className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+        >
+          Generate Notes for another YouTube video
+        </Link>
       </div>
     </div>
   );
