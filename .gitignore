@@ -38,3 +38,10 @@ next-env.d.ts
 # cloudflare workers
 /workers/**/node_modules
 /workers/**/.env
+.wrangler
+.dev.vars
+.mf
+
+# cloudflare specific
+.cloudflare
+/dist
