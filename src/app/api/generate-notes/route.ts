@@ -9,11 +9,6 @@ const openai = new OpenAI({
   baseURL: process.env.OPENAI_BASE_URL, // Optional: in case you need to override
 });
 
-export const config = {
-  runtime: 'edge',
-  regions: ['iad1'], // Optional: you can specify Cloudflare regions
-};
-
 export async function POST(request: NextRequest) {
   try {
     const { transcript } = await request.json();

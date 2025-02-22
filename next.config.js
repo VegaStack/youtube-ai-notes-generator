@@ -11,11 +11,8 @@ const nextConfig = {
       OPENAI_MODEL: process.env.OPENAI_MODEL,
       SUMMARY_PROMPT: process.env.SUMMARY_PROMPT,
     },
-    // Ensure these settings are compatible with Cloudflare Pages
-    swcMinify: true,
     experimental: {
-      isrMemoryCacheSize: 0,
-      serverActions: true,
+      isrMemoryCacheSize: 0
     }
   }
   
