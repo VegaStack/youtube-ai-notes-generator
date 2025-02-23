@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -18,6 +18,17 @@ export default function NotesViewer({ notes, videoId }: NotesViewerProps) {
   const [shareSuccess, setShareSuccess] = useState(false);
 
   const notesRef = React.useRef<HTMLDivElement>(null);
+
+  // Dynamically update the page title
+  useEffect(() => {
+    if (videoId) {
+      // Assume document.title initially is "<YouTube Video Title> - YouTube AI Notes by VegaStack"
+      const baseTitle = document.title.replace(' - YouTube AI Notes by VegaStack', '');
+      document.title = `${baseTitle} - YouTube AI Notes Generator | VegaStack`;
+    } else {
+      document.title = 'YouTube AI Notes Generator | VegaStack';
+    }
+  }, [videoId]);
 
   // Copy notes to clipboard in markdown format
   const handleCopyNotes = async () => {
@@ -230,9 +241,9 @@ export default function NotesViewer({ notes, videoId }: NotesViewerProps) {
       }
 
       // Generate a filename
-      const videoTitle = document.title.replace(' - Notes', '') || 'YouTube Notes';
+      const videoTitle = document.title.replace(' - YouTube AI Notes ', '') || 'YouTube AI Notes by VegaStack';
       const timestamp = new Date().toISOString().split('T')[0];
-      pdf.save(`${videoTitle}_${timestamp}.pdf`);
+        pdf.save(`${videoTitle}_${timestamp}.pdf`);
     } catch (err) {
       console.error('Error generating PDF:', err);
       alert('Failed to generate PDF');
@@ -282,7 +293,7 @@ export default function NotesViewer({ notes, videoId }: NotesViewerProps) {
 
             <button
               onClick={handleSystemShare}
-              className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+              className="hidden flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
               title="Share"
             >
               <ShareIcon className="h-4 w-4" />
@@ -309,7 +320,7 @@ export default function NotesViewer({ notes, videoId }: NotesViewerProps) {
       <div className="flex justify-center py-8">
         <Link
           href="/"
-          className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+          className="inline-flex items-center px-6 py-3 bg-primary-1300 text-white text-center font-medium rounded-lg hover:bg-primary-1100 transition-colors"
         >
           Generate Notes for another YouTube video
         </Link>

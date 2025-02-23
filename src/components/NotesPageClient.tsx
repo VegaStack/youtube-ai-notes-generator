@@ -52,7 +52,7 @@ export default function NotesPageClient() {
         console.log('Video details fetched:', videoDetails);
         
         if (videoDetails.title && typeof window !== 'undefined') {
-          document.title = `${videoDetails.title} - Notes`;
+          document.title = `${videoDetails.title} - YouTube AI Notes`;
         }
         
         let savedNotes, savedTranscript;
