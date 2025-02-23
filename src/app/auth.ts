@@ -1,6 +1,5 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { randomUUID } from "crypto";
 import { D1Database } from "@cloudflare/workers-types";
 
 // Ensure DB is defined globally in a Cloudflare Worker
@@ -45,7 +44,7 @@ export const {
           .first();
 
         if (!existingUser) {
-          const newUserId = randomUUID();
+          const newUserId = crypto.randomUUID();
 
           console.log(`Creating new user: ${user.email}, ID: ${newUserId}`);
 
