@@ -1,13 +1,22 @@
-// app/api/auth/[...nextauth]/route.ts
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { D1Database } from '@cloudflare/workers-types';
+import { randomUUID } from "crypto";
+import { D1Database } from "@cloudflare/workers-types";
 
+// Ensure DB is globally available
 declare global {
-  var DB: D1Database;
+  var DB: D1Database | undefined;
 }
 
-const handler = NextAuth({
+// Ensure DB is defined in Cloudflare Workers
+function getDB(): D1Database {
+  if (typeof globalThis.DB === "undefined") {
+    throw new Error("Cloudflare D1 database binding (DB) is missing. Ensure your environment exposes DB.");
+  }
+  return globalThis.DB;
+}
+
+const authHandler = NextAuth({
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -15,103 +24,95 @@ const handler = NextAuth({
     }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
-      if (user.email) {
-        try {
-          // Check if user exists
-          const existingUser = await DB
-            .prepare('SELECT * FROM users WHERE email = ?')
-            .bind(user.email)
-            .first();
+    async signIn({ user }) {
+      if (!user?.email) return true;
 
-          const now = new Date().toISOString();
+      try {
+        console.log(`Checking user: ${user.email}`);
+        const now = new Date().toISOString();
 
-          if (!existingUser) {
-            // Create new user
-            await DB
-              .prepare(`
-                INSERT INTO users (
-                  email, 
-                  name, 
-                  image, 
-                  login_count, 
-                  last_login_at, 
-                  created_at,
-                  updated_at
-                ) 
-                VALUES (?, ?, ?, 1, ?, ?, ?)
-              `)
-              .bind(
-                user.email,
-                user.name,
-                user.image,
-                now,
-                now,
-                now
-              )
-              .run();
-          } else {
-            // Update existing user and increment login count
-            await DB
-              .prepare(`
-                UPDATE users 
-                SET 
-                  name = ?, 
-                  image = ?, 
-                  login_count = login_count + 1,
-                  last_login_at = ?,
-                  updated_at = ?
-                WHERE email = ?
-              `)
-              .bind(
-                user.name,
-                user.image,
-                now,
-                now,
-                user.email
-              )
-              .run();
-          }
-        } catch (error) {
-          console.error('Database error:', error);
-          // Still allow sign in even if DB update fails
-          return true;
+        const DB = getDB();
+
+        // Check if user exists
+        const existingUser = await DB.prepare(
+          "SELECT id FROM users WHERE email = ?"
+        )
+          .bind(user.email)
+          .first();
+
+        if (!existingUser) {
+          const newUserId = randomUUID();
+
+          console.log(`Creating new user: ${user.email}, ID: ${newUserId}`);
+
+          await DB.prepare(
+            `INSERT INTO users (
+              id, email, name, image, login_count, last_login_at, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, 1, ?, ?, ?)`
+          )
+            .bind(
+              newUserId,
+              user.email,
+              user.name,
+              user.image,
+              now,
+              now,
+              now
+            )
+            .run();
+        } else {
+          console.log(`Updating existing user: ${user.email}`);
+
+          await DB.prepare(
+            `UPDATE users SET 
+              name = ?, 
+              image = ?, 
+              login_count = login_count + 1,
+              last_login_at = ?, 
+              updated_at = ?
+            WHERE email = ?`
+          )
+            .bind(user.name, user.image, now, now, user.email)
+            .run();
         }
+      } catch (error) {
+        console.error("Database error in signIn:", error);
+        return true;
       }
+
       return true;
     },
-    async session({ session, token }) {
-      if (session.user?.email) {
-        try {
-          const dbUser = await DB
-            .prepare(`
-              SELECT 
-                id,
-                name,
-                email,
-                image,
-                login_count,
-                last_login_at,
-                created_at
-              FROM users 
-              WHERE email = ?
-            `)
-            .bind(session.user.email)
-            .first();
-          
-          if (dbUser) {
-            session.user.id = dbUser.id;
-            session.user.loginCount = dbUser.login_count;
-            session.user.lastLoginAt = dbUser.last_login_at;
-          }
-        } catch (error) {
-          console.error('Error fetching user data:', error);
+
+    async session({ session }) {
+      if (!session.user?.email) return session;
+
+      try {
+        console.log(`Fetching session data for: ${session.user.email}`);
+        const DB = getDB();
+
+        const dbUser = await DB.prepare(
+          `SELECT id, email, name, image, login_count, last_login_at FROM users WHERE email = ?`
+        )
+          .bind(session.user.email)
+          .first();
+
+        if (dbUser) {
+          session.user.id = dbUser.id;
+          session.user.loginCount = dbUser.login_count;
+          session.user.lastLoginAt = dbUser.last_login_at;
         }
+      } catch (error) {
+        console.error("Error fetching user data in session:", error);
       }
+
       return session;
     },
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  pages: {
+    signIn: "/auth/signin",
+  },
+  secret: process.env.NEXTAUTH_SECRET!,
 });
 
-export { handler as GET, handler as POST };
+// Re-export as GET/POST for Next.js 13
+export { authHandler as GET, authHandler as POST };
