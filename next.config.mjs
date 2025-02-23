@@ -12,6 +12,7 @@ const nextConfig = {
   },
   experimental: {
     runtime: "edge",
+    serverActions: true,
   },
   productionBrowserSourceMaps: false, // 🔹 Disable source maps in production
   compiler: {

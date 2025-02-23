@@ -4,5 +4,14 @@
   "compatibility_flags": [
     "nodejs_compat"
   ],
-  "pages_build_output_dir": ".vercel/output/static"
+  "pages_build_output_dir": ".vercel/output/static",
+  
+  // Add D1 database configuration
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "youtube-ai-notes-db",
+      "database_id": "f59a0308-6438-48f1-8e33-01debb6cede1" // Replace with your actual D1 database ID
+    }
+  ]
 }

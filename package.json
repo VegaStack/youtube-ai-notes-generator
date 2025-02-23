@@ -12,11 +12,14 @@
         "deploy": "npm run pages:build && wrangler pages deploy"
     },
     "dependencies": {
+        "@auth/core": "^0.34.2",
+        "@auth/nextjs": "^0.0.0-380f8d56",
         "@heroicons/react": "^2.2.0",
         "axios": "^1.6.2",
         "html2canvas": "^1.4.1",
         "jspdf": "^2.5.1",
         "next": "^13.4.19",
+        "next-auth": "^4.24.11",
         "openai": "^4.20.1",
         "react": "^18",
         "react-dom": "^18",
@@ -26,6 +29,7 @@
     },
     "devDependencies": {
         "@cloudflare/next-on-pages": "^1.12.0",
+        "@cloudflare/workers-types": "^4.20250214.0",
         "@types/node": "^20",
         "@types/react": "^18",
         "@types/react-dom": "^18",
