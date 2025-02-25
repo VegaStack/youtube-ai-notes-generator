@@ -8,6 +8,8 @@ import TranscriptViewer from '@/components/TranscriptViewer';
 import NotesViewer from '@/components/NotesViewer';
 import { fetchTranscript, getVideoDetails } from '@/lib/youtube';
 import { generateNotes } from '@/lib/openai';
+import { addToHistory } from '@/lib/historyStore';
+import { useAuth } from '@/components/AuthProvider';
 
 // Helper for formatting dates like YouTube
 const formatDate = (dateString: string | undefined): string => {
@@ -34,6 +36,8 @@ const formatDate = (dateString: string | undefined): string => {
 export default function NotesPageClient() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const { user, status } = useAuth();
+  
   const videoId = params.videoId as string;
   const url = searchParams.get('url');
   
@@ -43,11 +47,54 @@ export default function NotesPageClient() {
   const playerRef = useRef<YouTubePlayerRef>(null);
   const [activeTab, setActiveTab] = useState<'notes' | 'transcript'>('notes');
 
+  // Add a state to track if we're saving to the database
+  const [savingToDb, setSavingToDb] = useState(false);
+
+  // Helper function to save notes to database
+  const saveNotesToDatabase = async (
+    videoId: string,
+    title: string,
+    channelTitle: string,
+    transcript: string,
+    notesContent: string
+  ) => {
+    if (savingToDb || status !== 'authenticated') return;
+    
+    setSavingToDb(true);
+    
+    try {
+      const response = await fetch('/api/notes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          videoId,
+          title,
+          channelTitle,
+          transcript,
+          notesContent,
+        }),
+      });
+      
+      if (!response.ok) {
+        console.error('Failed to save notes to database:', response.status);
+      } else {
+        console.log('Notes saved to database successfully');
+      }
+    } catch (error) {
+      console.error('Error saving notes to database:', error);
+    } finally {
+      setSavingToDb(false);
+    }
+  };
+
   useEffect(() => {
     const processVideo = async () => {
       const videoUrl = url || `https://www.youtube.com/watch?v=${videoId}`;
       
       try {
+        // First, get video details (metadata)
         const videoDetails = await getVideoDetails(videoId);
         console.log('Video details fetched:', videoDetails);
         
@@ -55,6 +102,51 @@ export default function NotesPageClient() {
           document.title = `${videoDetails.title} - YouTube AI Notes`;
         }
         
+        // If user is authenticated, try to get notes from the database first
+        if (status === 'authenticated' && user) {
+          try {
+            const response = await fetch(`/api/notes?videoId=${videoId}`);
+            
+            if (response.ok) {
+              const noteData = await response.json();
+              
+              // If found in database, use that data
+              setData({
+                videoId,
+                videoDetails,
+                transcript: noteData.transcript ? JSON.parse(noteData.transcript) : [],
+                transcriptText: noteData.transcript || '',
+                notes: noteData.notesContent,
+              });
+              
+              // Add to history
+              await addToHistory(videoId, videoDetails);
+              
+              // Also cache in localStorage for offline access
+              if (typeof window !== 'undefined') {
+                localStorage.setItem(`notes_${videoId}`, noteData.notesContent);
+                localStorage.setItem(`transcript_${videoId}`, JSON.stringify({
+                  transcript: noteData.transcript ? JSON.parse(noteData.transcript) : [],
+                  transcript_text: noteData.transcript || ''
+                }));
+                
+                // Store video metadata
+                localStorage.setItem(`video_meta_${videoId}`, JSON.stringify({
+                  videoDetails,
+                  timestamp: Date.now()
+                }));
+              }
+              
+              setLoading(false);
+              return;
+            }
+          } catch (err) {
+            console.error('Error fetching notes from database:', err);
+            // Continue with localStorage or fresh generation
+          }
+        }
+        
+        // Check localStorage as a fallback or for offline access
         let savedNotes, savedTranscript;
         if (typeof window !== 'undefined') {
           savedNotes = localStorage.getItem(`notes_${videoId}`);
@@ -62,20 +154,40 @@ export default function NotesPageClient() {
         }
         
         if (savedNotes && savedTranscript) {
-          const transcriptData = JSON.parse(savedTranscript);
-          
-          setData({
-            videoId,
-            videoDetails,
-            transcript: transcriptData.transcript || [],
-            transcriptText: transcriptData.transcript_text || '',
-            notes: savedNotes,
-          });
-          
-          setLoading(false);
-          return;
+          try {
+            const transcriptData = JSON.parse(savedTranscript);
+            
+            setData({
+              videoId,
+              videoDetails,
+              transcript: transcriptData.transcript || [],
+              transcriptText: transcriptData.transcript_text || '',
+              notes: savedNotes,
+            });
+            
+            // Add to history
+            await addToHistory(videoId, videoDetails);
+            
+            // If user is authenticated, save to database for future access
+            if (status === 'authenticated' && user) {
+              saveNotesToDatabase(
+                videoId,
+                videoDetails.title,
+                videoDetails.channelTitle || '',
+                transcriptData.transcript_text || '',
+                savedNotes
+              );
+            }
+            
+            setLoading(false);
+            return;
+          } catch (error) {
+            console.error('Error parsing saved transcript:', error);
+            // Continue with fresh generation
+          }
         }
         
+        // If we don't have the data yet, fetch the transcript and generate notes
         console.log('Fetching transcript for URL:', videoUrl);
         const transcriptData: TranscriptResponse = await fetchTranscript(videoUrl);
         
@@ -86,17 +198,11 @@ export default function NotesPageClient() {
 
         console.log('Sample transcript item (first):', transcriptData.transcript[0]);
         
+        // Generate notes from the transcript
         const notes = await generateNotes(transcriptData.transcript_text);
         console.log('Notes generated successfully');
         
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(`notes_${videoId}`, notes);
-          localStorage.setItem(`transcript_${videoId}`, JSON.stringify({
-            transcript: transcriptData.transcript,
-            transcript_text: transcriptData.transcript_text
-          }));
-        }
-        
+        // Store data in state
         setData({
           videoId,
           videoDetails,
@@ -104,6 +210,35 @@ export default function NotesPageClient() {
           transcriptText: transcriptData.transcript_text,
           notes,
         });
+        
+        // Store in localStorage for offline access
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(`notes_${videoId}`, notes);
+          localStorage.setItem(`transcript_${videoId}`, JSON.stringify({
+            transcript: transcriptData.transcript,
+            transcript_text: transcriptData.transcript_text
+          }));
+          
+          // Store video metadata for history
+          localStorage.setItem(`video_meta_${videoId}`, JSON.stringify({
+            videoDetails,
+            timestamp: Date.now()
+          }));
+        }
+        
+        // Add to history
+        await addToHistory(videoId, videoDetails);
+        
+        // If user is authenticated, save to database for future access
+        if (status === 'authenticated' && user) {
+          saveNotesToDatabase(
+            videoId,
+            videoDetails.title,
+            videoDetails.channelTitle || '',
+            transcriptData.transcript_text,
+            notes
+          );
+        }
         
       } catch (err) {
         console.error('Error processing video:', err);
@@ -113,8 +248,14 @@ export default function NotesPageClient() {
       }
     };
 
-    processVideo();
-  }, [videoId, url]);
+    // Only process the video if we have the videoId
+    if (videoId) {
+      processVideo();
+    } else {
+      setError('No video ID provided');
+      setLoading(false);
+    }
+  }, [videoId, url, status, user, saveNotesToDatabase]);
 
   const handleTimestampClick = (timeInSeconds: number) => {
     console.log('Seeking to time (seconds):', timeInSeconds);
