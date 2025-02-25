@@ -1,4 +1,3 @@
-// src/app/layout.tsx
 import type { Metadata } from "next";
 import Image from "next/image";
 import { Inter } from "next/font/google";
@@ -10,7 +9,8 @@ import AuthProvider from "@/components/AuthProvider";
 import HistoryProvider from "@/components/HistoryProvider";
 import UserProfileButton from "@/components/UserProfileButton";
 import NotesSyncManager from "@/components/NotesSyncManager";
-import Link from "next/link";
+import Link from "next/link"; // Imported but optional if you prefer <a> tags
+import ErrorLogger from "./error-logger";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,12 +18,15 @@ export const metadata: Metadata = {
   title: "YouTube AI Notes Generator by VegaStack",
   description:
     "Automatically extracts transcripts from YouTube videos, processes them with OpenAI, and generates structured notes for efficient learning.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://youtube-notes.vegastack.com"),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://youtube-notes.vegastack.com"
+  ),
   openGraph: {
     title: "YouTube AI Notes Generator by VegaStack",
     description:
       "Extracts transcripts from YouTube videos and generates AI-powered structured notes for better learning.",
-    url: process.env.NEXT_PUBLIC_SITE_URL || "https://youtube-notes.vegastack.com",
+    url:
+      process.env.NEXT_PUBLIC_SITE_URL || "https://youtube-notes.vegastack.com",
     siteName: "YouTube AI Notes Generator",
     images: [
       {
@@ -59,9 +62,22 @@ export default function RootLayout({
       <head>
         {/* Favicons */}
         <link rel="icon" href="/images/favicons/favicon.ico" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/images/favicons/apple-touch-icon.png" />
-        <link rel="icon" type="image/png" sizes="96x96" href="/images/favicons/favicon-96x96.png" />
-        <link rel="icon" type="image/svg+xml" href="/images/favicons/favicon.svg" />
+        <link
+          rel="apple-touch-icon"
+          sizes="180x180"
+          href="/images/favicons/apple-touch-icon.png"
+        />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="96x96"
+          href="/images/favicons/favicon-96x96.png"
+        />
+        <link
+          rel="icon"
+          type="image/svg+xml"
+          href="/images/favicons/favicon.svg"
+        />
         <link rel="manifest" href="/images/favicons/site.webmanifest" />
       </head>
       <body className={inter.className}>
@@ -70,7 +86,7 @@ export default function RootLayout({
             <div className="min-h-screen flex flex-col">
               <header className="bg-black text-white">
                 <div className="container mx-auto px-4 py-4 flex flex-col sm:flex-row items-center sm:justify-between space-y-2 sm:space-y-0">
-                  {/* Logo + Title - Left Aligned on Desktop, Centered on Mobile */}
+                  {/* Logo + Title */}
                   <div className="flex items-center space-x-2">
                     <a href="/" className="flex items-center space-x-2">
                       <Image
@@ -80,14 +96,17 @@ export default function RootLayout({
                         height={40}
                         className="w-10 h-10"
                       />
-                      <span className="text-2xl font-bold">YouTube AI Notes</span>
+                      <span className="text-2xl font-bold">
+                        YouTube AI Notes
+                      </span>
                     </a>
                   </div>
 
-                  {/* Buttons - Centered on Mobile & Adjacent */}
+                  {/* Buttons row */}
                   <div className="flex items-center justify-center sm:justify-start space-x-3 w-full sm:w-auto">
                     <HistoryButton />
                     <GitHubStars />
+                    {/* The missing <a> tag for VegaStack link */}
                     <a
                       href="https://vegastack.com"
                       target="_blank"
@@ -119,38 +138,87 @@ export default function RootLayout({
 
               <footer className="bg-gray-100 px-6 border-t border-gray-200">
                 <div className="container mx-auto px-4 py-4">
-                  {/* Mobile View - Centered with New Lines */}
+                  {/* Mobile Footer */}
                   <div className="sm:hidden flex flex-col items-center text-center space-y-2 text-sm text-primary-1300">
-                    <span>&copy; {new Date().getFullYear()} YouTube AI Notes Generator</span>
-                    <span>Powered by <a href="https://vegastack.com" target="_blank" rel="noopener noreferrer" className="text-primary-1300 hover:underline">VegaStack Inc.</a></span>
-                    <span>Developed by <a href="https://kmanojkumar.com" target="_blank" rel="noopener noreferrer" className="text-primary-1300 hover:underline">K Manoj Kumar</a></span>
-                    <a 
-                      href="https://github.com/VegaStack/youtube-ai-notes-generator" 
+                    <span>
+                      &copy; {new Date().getFullYear()} YouTube AI Notes
+                      Generator
+                    </span>
+                    <span>
+                      Powered by{" "}
+                      <a
+                        href="https://vegastack.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary-1300 hover:underline"
+                      >
+                        VegaStack Inc.
+                      </a>
+                    </span>
+                    <span>
+                      Developed by{" "}
+                      <a
+                        href="https://kmanojkumar.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary-1300 hover:underline"
+                      >
+                        K Manoj Kumar
+                      </a>
+                    </span>
+                    <a
+                      href="https://github.com/VegaStack/youtube-ai-notes-generator"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary-1300 hover:text-primary-1300 transition-colors duration-200 flex items-center mt-2"
                     >
-                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <svg
+                        className="w-4 h-4 mr-1"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
                         <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
                       </svg>
                       GitHub
                     </a>
                   </div>
 
-                  {/* Desktop View - Left/Right Alignment */}
+                  {/* Desktop Footer */}
                   <div className="hidden sm:flex justify-between items-center text-sm text-primary-1300">
                     <div>
-                      &copy; {new Date().getFullYear()} YouTube AI Notes Generator <span className="mx-1">·</span> 
-                      Powered by <a href="https://vegastack.com" target="_blank" rel="noopener noreferrer" className="text-primary-1300 hover:underline">VegaStack Inc.</a> <span className="mx-1">·</span> 
-                      Developed by <a href="https://kmanojkumar.com" target="_blank" rel="noopener noreferrer" className="text-primary-1300 hover:underline">K Manoj Kumar</a>
+                      &copy; {new Date().getFullYear()} YouTube AI Notes
+                      Generator <span className="mx-1">·</span> Powered by{" "}
+                      <a
+                        href="https://vegastack.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary-1300 hover:underline"
+                      >
+                        VegaStack Inc.
+                      </a>{" "}
+                      <span className="mx-1">·</span> Developed by{" "}
+                      <a
+                        href="https://kmanojkumar.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary-1300 hover:underline"
+                      >
+                        K Manoj Kumar
+                      </a>
                     </div>
-                    <a 
-                      href="https://github.com/VegaStack/youtube-ai-notes-generator" 
+                    <a
+                      href="https://github.com/VegaStack/youtube-ai-notes-generator"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary-1300 hover:text-primary-1300 transition-colors duration-200 flex items-center"
                     >
-                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <svg
+                        className="w-4 h-4 mr-1"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
                         <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
                       </svg>
                       GitHub
@@ -159,12 +227,15 @@ export default function RootLayout({
                 </div>
               </footer>
             </div>
-            
+
             {/* History component (portal) */}
             <History />
-            
+
             {/* Silent sync manager */}
             <NotesSyncManager />
+
+            {/* Error Logger */}
+            <ErrorLogger />
           </HistoryProvider>
         </AuthProvider>
       </body>

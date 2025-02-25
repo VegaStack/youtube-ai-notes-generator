@@ -6,7 +6,8 @@ export const config = {
   matcher: [
     '/api/notes/:path*',
     '/api/history/:path*',
-    // Add any other protected paths here
+    // Make sure auth routes are NOT matched here
+    // '/api/auth/:path*' should NOT be in this list
   ],
 };
 

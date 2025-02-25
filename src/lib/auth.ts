@@ -1,9 +1,5 @@
 import { cookies } from 'next/headers';
 import { jwtVerify, SignJWT } from 'jose';
-import { db } from '@/lib/db';
-import { eq } from 'drizzle-orm';
-import { users } from '../lib/db/schema';
-import type { User } from '../lib/db/schema';
 
 // Types for auth
 export type AuthUser = {
@@ -22,51 +18,52 @@ const getJwtSecretKey = () => {
   return new TextEncoder().encode(secret);
 };
 
-// Verify JWT token
+// Verify JWT token with enhanced error handling
 export async function verifyAuth() {
-  const token = cookies().get('auth-token')?.value;
-  
-  if (!token) return null;
-  
   try {
-    const verified = await jwtVerify(token, getJwtSecretKey());
-    return verified.payload as AuthUser;
+    const token = cookies().get('auth-token')?.value;
+    
+    if (!token) return null;
+    
+    try {
+      const verified = await jwtVerify(token, getJwtSecretKey());
+      return verified.payload as AuthUser;
+    } catch (error) {
+      console.error('JWT verification error:', error);
+      // If token verification fails, clear the invalid token
+      cookies().delete('auth-token');
+      return null;
+    }
   } catch (error) {
+    console.error('Auth verification error:', error);
     return null;
   }
 }
 
 // Create a session (sign JWT)
 export async function signAuth(user: AuthUser) {
-  const token = await new SignJWT(user)
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime('2w') // 2 weeks
-    .sign(getJwtSecretKey());
-  
-  cookies().set('auth-token', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 60 * 60 * 24 * 14, // 2 weeks
-    path: '/',
-  });
-  
-  return token;
+  try {
+    const token = await new SignJWT(user)
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('2w') // 2 weeks
+      .sign(getJwtSecretKey());
+    
+    cookies().set('auth-token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 * 14, // 2 weeks
+      path: '/',
+    });
+    
+    return token;
+  } catch (error) {
+    console.error('Error signing auth token:', error);
+    throw error;
+  }
 }
 
 // Sign out user
 export function signOut() {
   cookies().delete('auth-token');
-}
-
-// Get current user from database
-export async function getCurrentUser(): Promise<User | null> {
-  const auth = await verifyAuth();
-  if (!auth?.id) return null;
-  
-  const user = await db.query.users.findFirst({
-    where: eq(users.id, auth.id),
-  });
-  
-  return user as User | null;
 }
